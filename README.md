@@ -10,7 +10,7 @@ The BITalino (r)evolution Python API provides the needed tools to interact with 
 - [PyBluez](https://github.com/pybluez/pybluez) (Not needed for macOS)
 
 ## Installation
-
+gi
 Install [**bitalino**](https://pypi.org/project/bitalino/) API package from PyPI:
 
 ```winbatch
@@ -36,3 +36,6 @@ A sample script is available at [**samples**](samples) folder.
 ## License
 
 This project is licensed under the [GNU GPL v3](LICENSE.md)
+
+
+Olá Joana
