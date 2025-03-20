@@ -90,51 +90,67 @@ class BITalino(object):
     """
 
     def __init__(self, macAddress, timeout=None):
-        regCompiled = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
-        checkMatch = re.match(regCompiled, macAddress)
-        self.isPython2 = True if sys.version_info[0] == 2 else False
-        self.blocking = True if timeout is None else False
+
+        "constructor of a class that initializes a connection to the BitAlino using different communication protocols"
+
+        regCompiled = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")       # Define regular expression to macAdress
+        checkMatch = re.match(regCompiled, macAddress)                              # Check if it is a match
+        
+        # Python version check
+        self.isPython2 = True if sys.version_info[0] == 2 else False  
+                      
+        # Timeout check
+        self.blocking = True if timeout is None else False                          # If no timeout is provided -> the connection operates in blocking mode
         if not self.blocking:
             try:
-                self.timeout = float(timeout)
-            except Exception:
-                raise Exception(ExceptionCode.INVALID_PARAMETER)
+                self.timeout = float(timeout)                                       # Timeout is given the code tries to convert it to a float
+            except Exception:               
+                raise Exception(ExceptionCode.INVALID_PARAMETER)                    # Exception if failed
+            
+        "C: blocking and timeout behaviour determine how long the program waits for a response."
+        "Blocking mode -> the program wait indefinitely until data is received "
+        "Non-Blocking Mode -> if time is provided, the program will only wait for the duration"
+
+        "Why use Timeout? Precvents the program from getting stuck forever if a device is unresponsive"
+            
         if checkMatch:
-            if platform.system() == "Windows" or platform.system() == "Linux":
+            if platform.system() == "Windows" or platform.system() == "Linux":      #Check if operating system is Windows or Linux
                 try:
-                    import bluetooth
+                    import bluetooth                                                # Attempts import blutetooth eith exception if fails
                 except Exception as e:
                     raise Exception(ExceptionCode.IMPORT_FAILED + str(e))
-                self.socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-                self.socket.connect((macAddress, 1))
+                self.socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)           # Bluetooth socket is created
+                self.socket.connect((macAddress, 1))                                # self.wifi and self.serial flags are set to false
                 self.wifi = False
                 self.serial = False
             else:
                 raise Exception(ExceptionCode.INVALID_PLATFORM)
-        elif (macAddress[0:3] == "COM" and platform.system() == "Windows") or (
-            macAddress[0:5] == "/dev/" and platform.system() != "Windows"
+        elif (macAddress[0:3] == "COM" and platform.system() == "Windows") or (     # If macAdress starts with "COM" or /dev/, it assumes a serial connection        
+            macAddress[0:5] == "/dev/" and platform.system() != "Windows"           # self.serial is set ton true
         ):
             self.socket = serial.Serial(macAddress, 115200)
             self.wifi = False
             self.serial = True
-        elif macAddress.count(":") == 1:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        elif macAddress.count(":") == 1:                                            # If macAdress contains only on colon, it's assumed to be an IP adress
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)         # self.serial is set ton true
             self.socket.connect((macAddress.split(":")[0], int(macAddress.split(":")[1])))
             self.wifi = True
             self.serial = False
         else:
-            raise Exception(ExceptionCode.INVALID_ADDRESS)
+            raise Exception(ExceptionCode.INVALID_ADDRESS)                          # Exception if invalid adress
+        
+        # Version Check
         self.started = False
         self.macAddress = macAddress
         split_string = "_v"
         split_string_old = "V"
-        version = self.version()
+        version = self.version()                                                    # Version is retrieved using self.version
         if split_string in version:
             version_nbr = float(version.split(split_string)[1][:3])
         else:
             version_nbr = float(version.split(split_string_old)[1][:3])
-        self.isBitalino2 = True if version_nbr >= 4.2 else False
-        self.isBitalino52 = True if version_nbr >= 5.2 else False
+        self.isBitalino2 = True if version_nbr >= 4.2 else False                    # If version is 4.2 or higher, self.isBitalino2 is True
+        self.isBitalino52 = True if version_nbr >= 5.2 else False                   # If version is 5.2 or higher, self.isBitalino52 is True                   
 
     def start(self, SamplingRate=1000, analogChannels=[0, 1, 2, 3, 4, 5]):
         """
