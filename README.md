@@ -36,6 +36,3 @@ A sample script is available at [**samples**](samples) folder.
 ## License
 
 This project is licensed under the [GNU GPL v3](LICENSE.md)
-
-
-Olá Joana
