@@ -191,7 +191,7 @@ class BITalino(object):
             if int(SamplingRate) not in [1, 10, 100, 1000]:                         
                 raise Exception(ExceptionCode.INVALID_PARAMETER)                    # If invalid value is given exception is raised
 
-            # Converting SamplingRate into a Command
+            # Converting user entered SamplingRate into a Command
             # CommandSRate: <Fs>  0  0  0  0  1  1
             if int(SamplingRate) == 1000:
                 commandSRate = 3
@@ -203,6 +203,7 @@ class BITalino(object):
                 commandSRate = 0
 
             # Validating and Conveing analogChannels
+            # Converts analog info into a list
             if isinstance(analogChannels, list):
                 analogChannels = analogChannels
             elif isinstance(analogChannels, tuple):
@@ -212,24 +213,30 @@ class BITalino(object):
             else:
                 raise Exception(ExceptionCode.INVALID_PARAMETER)
 
-            #,Ensuring Unique Channel Selection
+            # Ensuring Unique Channel Selection
+            # Removes Duplicates from the list
             analogChannels = list(set(analogChannels))
 
+            # Checkying if selected channels are valid
             if (
-                len(analogChannels) == 0
-                or len(analogChannels) > 6
-                or any([item not in range(6) or type(item) != int for item in analogChannels])
+                len(analogChannels) == 0                                                            # at least one variable is selected
+                or len(analogChannels) > 6                                                          # less than 6 variables are selected
+                or any([item not in range(6) or type(item) != int for item in analogChannels])      # each channel is an integer
             ):
-                raise Exception(ExceptionCode.INVALID_PARAMETER)
+                raise Exception(ExceptionCode.INVALID_PARAMETER)                                    # if any fails, exception si raised
 
+            # Sending the Sampling Rate Command
             self.send((commandSRate << 6) | 0x03)
 
             # CommandStart: A6 A5 A4 A3 A2 A1 0  1
+            # Encoding & Sending the Start Command
             commandStart = 1
             for i in analogChannels:
                 commandStart = commandStart | 1 << (2 + i)
 
             self.send(commandStart)
+
+            # Marking Acquisition as Started
             self.started = True
             self.analogChannels = analogChannels
         else:
