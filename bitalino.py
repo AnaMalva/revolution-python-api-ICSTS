@@ -264,17 +264,21 @@ class BITalino(object):
         """
         Closes the bluetooth or serial port socket.
         """
+        # Verificar se a ligação é wifi
         if self.wifi:
             self.socket.settimeout(1.0)  # force a timeout on TCP/IP sockets
             try:
                 self.receive(1024)  # receive any pending data
-                self.socket.shutdown(socket.SHUT_RDWR)
-                self.socket.close()
+                # Fechar o socket
+                self.socket.shutdown(socket.SHUT_RDWR)          # Desativa o envio e recepção de dado
+                self.socket.close()                             # Fecha o socket definitivamente
+            # tentativa de receive(1024) travar devido a um timeout
             except socket.timeout:
                 self.socket.shutdown(socket.SHUT_RDWR)
                 self.socket.close()
+        # Caso bluetooth ou serial port
         else:
-            self.socket.close()
+            self.socket.close()                                 # Fecha o socket permanentemente
 
     def send(self, data):
         """
