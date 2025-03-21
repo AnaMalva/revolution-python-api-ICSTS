@@ -436,6 +436,7 @@ class BITalino(object):
 
         Acts on digital output channels of the BITalino device. Triggering these digital outputs implies the use of the method :meth:`send`.
         Digital Outputs can be set on IDLE or while in acquisition for BITalino 2.0.
+        It allows the user to specify a list of values (0 or 1) that determine the state of each digital output.
 
         Each position of the array *digitalArray* corresponds to a digital output, in ascending order. Possible values, types, configurations and examples for parameter *digitalArray*:
 
@@ -448,11 +449,17 @@ class BITalino(object):
         Examples         ``[1, 0, 1, 0]``                               ``[1, 0]``
         ===============  ============================================== ==============================================
         """
+
+        # Determina número de canais digitais -> BITalino 2.0 possui 2 canais digitais & BITalino 1.0 possui 4 canais digitais
         arraySize = 2 if self.isBitalino2 else 4
+
+        # BITalino 2.0, digital outputs can be set at any time
+        # Ensure BITalino 1.0 is in Acquisition Mode -> BITalino 1.0, digital outputs can only be triggered during active acquisition
         if not self.isBitalino2 and not self.started:
             raise Exception(ExceptionCode.DEVICE_NOT_IN_ACQUISITION)
+        # Ensures digitalArray is a list, converting it if necessary
         else:
-            digitalArray = [0 for i in range(arraySize)] if digitalArray is None else digitalArray
+            digitalArray = [0 for i in range(arraySize)] if digitalArray is None else digitalArray # Initialize digitalArray if Not Provided
             if isinstance(digitalArray, list):
                 digitalArray = digitalArray
             elif isinstance(digitalArray, tuple):
@@ -462,12 +469,14 @@ class BITalino(object):
             else:
                 raise Exception(ExceptionCode.INVALID_PARAMETER)
 
+            # Validate the Input Data
             pValues = [0, 1]
             if len(digitalArray) != arraySize or any(
-                [item not in pValues or type(item) != int for item in digitalArray]
+                [item not in pValues or type(item) != int for item in digitalArray] # Ensures the correct number of values & Ensures all values are either 0 or 1.
             ):
                 raise Exception(ExceptionCode.INVALID_PARAMETER)
 
+            # Set Up the Command Byte
             if self.isBitalino2:
                 # CommandDigital: 1  0  1  1  O2 O1 1  1 - Set digital outputs
                 data = 179
@@ -475,6 +484,7 @@ class BITalino(object):
                 # CommandDigital: 1  0  O4  O3  O2 O1 1  1 - Set digital outputs
                 data = 3
 
+            # Set Digital Output Values
             for i, j in enumerate(digitalArray):
                 data = data | j << (2 + i)
             self.send(data)
