@@ -364,7 +364,10 @@ class BITalino(object):
         digitalChannels    Value of all digital channels    Array of int   [I1 I2 O1 O2]
         =================  ================================ ============== =====================
         """
+
+        # Verficar se o dispositivo é um Bitalino 2.0
         if self.isBitalino2:
+            # Verificar se o dispositivo o iddle
             if self.started is False:
                 # CommandState: 0  0  0  0  1  0  1  1
                 # Response: <A1 (2 bytes: 0..1023)> <A2 (2 bytes: 0..1023)> <A3 (2 bytes: 0..1023)>
@@ -372,13 +375,17 @@ class BITalino(object):
                 #           <ABAT (2 bytes: 0..1023)>
                 #           <Battery threshold (1 byte: 0..63)>
                 #           <Digital ports + CRC (1 byte: I1 I2 O1 O2 <CRC 4-bit>)>
-                self.send(11)
+
+                self.send(11) # Comando solicita o estado do dispositivo   
+
+                # Determina o número de bytes esperado                                                                        
                 if self.isBitalino52:
-                    number_bytes = 17
+                    number_bytes = 17       # BitAlino 5.2 -> 17 bytes
                 else:
-                    number_bytes = 16
-                Data = self.receive(number_bytes)
-                decodedData = list(struct.unpack(number_bytes * "B ", Data))
+                    number_bytes = 16       # BitAlino 2 -> 16 bytes
+                Data = self.receive(number_bytes) # Receber dados do dispositivo
+                decodedData = list(struct.unpack(number_bytes * "B ", Data)) # Decodificar so dados recebidos
+                # Verificar a integridade dos dados
                 crc = decodedData[-1] & 0x0F
                 decodedData[-1] = decodedData[-1] & 0xF0
                 x = 0
@@ -388,6 +395,7 @@ class BITalino(object):
                         if x & 0x10:
                             x = x ^ 0x03
                         x = x ^ ((decodedData[i] >> bit) & 0x01)
+                # Extrair informação dos canais analógicos e digitais
                 if crc == x & 0x0F:
                     digitalPorts = []
                     digitalPorts.append(decodedData[-1] >> 7 & 0x01)
@@ -405,6 +413,7 @@ class BITalino(object):
                     A3 = decodedData[-11 + offset] << 8 | decodedData[-12 + offset]
                     A2 = decodedData[-13 + offset] << 8 | decodedData[-14 + offset]
                     A1 = decodedData[-15 + offset] << 8 | decodedData[-16 + offset]
+                    # Returnar os dados em um dicionário
                     acquiredData = {}
                     acquiredData["analogChannels"] = [A1, A2, A3, A4, A5, A6]
                     acquiredData["battery"] = battery
@@ -414,9 +423,9 @@ class BITalino(object):
                 else:
                     raise Exception(ExceptionCode.CONTACTING_DEVICE)
             else:
-                raise Exception(ExceptionCode.DEVICE_NOT_IDLE)
+                raise Exception(ExceptionCode.DEVICE_NOT_IDLE)                                  # Raise Exception no caso de não estar idle
         else:
-            raise Exception(ExceptionCode.INVALID_VERSION)
+            raise Exception(ExceptionCode.INVALID_VERSION)                                      # Raise Exception no caso de a versão ser inválida
 
     def trigger(self, digitalArray=None):
         """
