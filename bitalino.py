@@ -523,18 +523,24 @@ class BITalino(object):
 
         .. note:: *The sequence number overflows at 15
         """
+        # Check if data aquisition as alerady started
         if self.started:
+            # Determine the number of analog channels
             nChannels = len(self.analogChannels)
 
+            # Calcualte the number of bytes per sample, depending on how many analog channels are used
             if nChannels <= 4:
                 number_bytes = int(math.ceil((12.0 + 10.0 * nChannels) / 8.0))
             else:
                 number_bytes = int(math.ceil((52.0 + 6.0 * (nChannels - 4)) / 8.0))
 
+            # Prepare data array
             dataAcquired = numpy.zeros((nSamples, 5 + nChannels), dtype=int)
+            # Loop to read each sample
             for sample in range(nSamples):
-                Data = self.receive(number_bytes)
-                decodedData = list(struct.unpack(number_bytes * "B ", Data))
+                Data = self.receive(number_bytes) # Read the required number of bytes from the device
+                decodedData = list(struct.unpack(number_bytes * "B ", Data)) # convert the binary data into list of integers
+                # CRC (Cyclic Redundancy Check) Calculation
                 crc = decodedData[-1] & 0x0F
                 decodedData[-1] = decodedData[-1] & 0xF0
                 x = 0
@@ -544,12 +550,14 @@ class BITalino(object):
                         if x & 0x10:
                             x = x ^ 0x03
                         x = x ^ ((decodedData[i] >> bit) & 0x01)
+                # Digital Channels acquirement
                 if crc == x & 0x0F:
                     dataAcquired[sample, 0] = decodedData[-1] >> 4
                     dataAcquired[sample, 1] = decodedData[-2] >> 7 & 0x01
                     dataAcquired[sample, 2] = decodedData[-2] >> 6 & 0x01
                     dataAcquired[sample, 3] = decodedData[-2] >> 5 & 0x01
                     dataAcquired[sample, 4] = decodedData[-2] >> 4 & 0x01
+                    # Analog channels acquirement
                     if nChannels > 0:
                         dataAcquired[sample, 5] = ((decodedData[-2] & 0x0F) << 6) | (
                             decodedData[-3] >> 2
@@ -581,9 +589,11 @@ class BITalino(object):
 
         Retrieves the BITalino version. Retrieving the version implies the use of the methods :meth:`send` and :meth:`receive`.
         """
+        # Check if device is idle
         if self.started is False:
             # CommandVersion: 0  0  0  0  0  1  1  1
-            self.send(7)
+            self.send(7) # Send the version command
+            # Receive the version string
             version_str = ""
             while True:
                 if self.isPython2:
@@ -592,6 +602,7 @@ class BITalino(object):
                     version_str += self.receive(1).decode("utf-8")
                 if version_str[-1] == "\n" and "BITalino" in version_str:
                     break
+            # Extract and return version
             return version_str[version_str.index("BITalino") : -1]
         else:
             raise Exception(ExceptionCode.DEVICE_NOT_IDLE)
