@@ -248,14 +248,16 @@ class BITalino(object):
 
         Stops the acquisition. Stoping the acquisition implies the use of the method :meth:`send`.
         """
+        # Check if aquisition is active
         if self.started:
-            self.send(0)
+            self.send(0)        # Sends the stop command (0) to the device; stops the aquisition
+        # Handling the BITalino 2 Device     ->     BITalino 2 needs to be handled differently because it has a different command set
         else:
             if self.isBitalino2:
                 # Command: 1  1  1  1  1  1  1  1 - Go to idle mode from all modes.
-                self.send(255)
+                self.send(255)  # If it is BITalino 2, it sends the command 255; stopping all running processes
             else:
-                raise Exception(ExceptionCode.DEVICE_NOT_IN_ACQUISITION)
+                raise Exception(ExceptionCode.DEVICE_NOT_IN_ACQUISITION)            # Raising exception in case device is already idle
         self.started = False
 
     def close(self):
