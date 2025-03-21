@@ -314,15 +314,16 @@ class BITalino(object):
         Maximum *value*  63       3.8 Volts
         ===============  =======  =====================
         """
+        # Check if device is idle
         if self.started is False:
-            if 0 <= int(value) <= 63:
+            if 0 <= int(value) <= 63:                               # If batery inside the thresholf
                 # CommandBattery: <bat   threshold> 0  0
                 commandBattery = int(value) << 2
-                self.send(commandBattery)
+                self.send(commandBattery)                           # Send device's batery
             else:
-                raise Exception(ExceptionCode.INVALID_PARAMETER)
+                raise Exception(ExceptionCode.INVALID_PARAMETER)    # Raise Exception in case batery not in the valid range
         else:
-            raise Exception(ExceptionCode.DEVICE_NOT_IDLE)
+            raise Exception(ExceptionCode.DEVICE_NOT_IDLE)          # Raise Exception in case device is not idle
 
     def pwm(self, pwmOutput=100):
         """
