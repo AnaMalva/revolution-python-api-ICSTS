@@ -154,7 +154,9 @@ class BITalino(object):
 
     def start(self, SamplingRate=1000, analogChannels=[0, 1, 2, 3, 4, 5]):
         """
-        :param SamplingRate: sampling frequency (Hz)
+        Responsible for starting data aquisition from BITalino 
+
+        :param SamplingRate: sampling frequency (Hz)      ->       Defines how often the device samples data epr second
         :type SamplingRate: int
         :param analogChannels: channels to be acquired
         :type analogChannels: array, tuple or list of int
@@ -183,10 +185,13 @@ class BITalino(object):
 
         .. note:: To obtain the samples, use the method :meth:`read`.
         """
-        if self.started is False:
-            if int(SamplingRate) not in [1, 10, 100, 1000]:
-                raise Exception(ExceptionCode.INVALID_PARAMETER)
+        # Checking if Acquisition is Already Started 
+        if self.started is False:                                                   # Ensures that acquisition isn't already running
+            # Validate Sampling Rate
+            if int(SamplingRate) not in [1, 10, 100, 1000]:                         
+                raise Exception(ExceptionCode.INVALID_PARAMETER)                    # If invalid value is given exception is raised
 
+            # Converting SamplingRate into a Command
             # CommandSRate: <Fs>  0  0  0  0  1  1
             if int(SamplingRate) == 1000:
                 commandSRate = 3
@@ -197,6 +202,7 @@ class BITalino(object):
             elif int(SamplingRate) == 1:
                 commandSRate = 0
 
+            # Validating and Conveing analogChannels
             if isinstance(analogChannels, list):
                 analogChannels = analogChannels
             elif isinstance(analogChannels, tuple):
@@ -206,6 +212,7 @@ class BITalino(object):
             else:
                 raise Exception(ExceptionCode.INVALID_PARAMETER)
 
+            #,Ensuring Unique Channel Selection
             analogChannels = list(set(analogChannels))
 
             if (
